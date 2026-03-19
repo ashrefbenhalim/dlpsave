@@ -1,0 +1,95 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+body {
+    font-family: 'Roboto', sans-serif;
+    background: #f8f9fa;
+    color: #212529;
+    margin: 0;
+    padding: 0;
+}
+
+.logo span {
+    color: #0d6efd;
+    font-weight: 700;
+}
+
+.hero {
+    margin-top: 0 !important;
+    padding-top: 6rem !important;
+    background: #0d6efd;
+}
+
+header {
+    padding: 1rem 0;   /* reduces vertical padding a little */
+}
+
+.btn-primary,
+.search-box button {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+.btn-primary:hover,
+.search-box button:hover {
+    background-color: #0b5ed7;
+    border-color: #0b5ed7;
+}
+
+.search-box .form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.btn-success {
+    background-color: #198754;
+    border-color: #198754;
+}
+.btn-success:hover {
+    background-color: #157347;
+    border-color: #157347;
+}
+
+.btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+.btn-danger:hover {
+    background-color: #bb2d3b;
+    border-color: #bb2d3b;
+}
+
+.btn-outline-light {
+    color: white;
+    border-color: white;
+}
+.btn-outline-light:hover {
+    background-color: white;
+    color: #0d6efd;
+    border-color: white;
+}
+
+.badge.bg-secondary {
+    background-color: #6c757d !important;
+}
+
+.accordion-button:not(.collapsed) {
+    background-color: #e7f1ff;
+    color: #0d6efd;
+}
+
+.accordion-button:focus {
+    box-shadow: none;
+}
+
+.fixed-top {
+    z-index: 1030;
+    transition: background 0.3s ease;
+}
+
+.fixed-top.scrolled {
+    background: #0b5ed7 !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.shadow, .shadow-sm {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
+}
