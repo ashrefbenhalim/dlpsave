@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link rel="stylesheet" href="css/style.css">
+    <title>dlwip - Video & Audio Downloader</title>
+</head>
+<body>
+
+    <header class="bg-primary text-white py-3 shadow-sm fixed-top">
+        <div class="container d-flex justify-content-between align-items-center">
+            <div class="logo fs-3 fw-bold">
+                <a href="#" class="text-white text-decoration-none">dlwip</a>
+            </div>
+            
+            <nav class="top-nav d-flex align-items-center">
+                <a href="#home" class="text-white me-4 text-decoration-none">Home</a>
+                <a href="#history" class="text-white me-4 text-decoration-none">History</a>
+                <a href="#faq" class="text-white me-4 text-decoration-none">FAQ</a>
+                <a href="#about" class="text-white me-4 text-decoration-none">About</a>
+                <a href="#" class="btn btn-outline-light btn-sm">Login / Sign up</a>
+            </nav>
+        </div>
+    </header>
+
+    <section id="home" class="hero bg-dark text-white text-center py-5">
+        <div class="container">
+            <h1 class="display-4 fw-bold">Download Videos & Audio</h1>
+            <p class="lead mb-5">Paste any URL • Videos, Playlists, MP3 • 100% local & private</p>
+            
+            <div class="search-box mx-auto" style="max-width: 720px;">
+                <div class="input-group input-group-lg">
+                    <input type="text" id="urlInput" class="form-control" placeholder="https://youtu.be/... or song title"
+                           onkeypress="if(event.key==='Enter') searchVideo()">
+                    <button class="btn btn-primary" type="button" onclick="searchVideo()">→</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div id="result" class="result container my-5 py-4 bg-white shadow rounded" style="display:none;">
+        <div class="row g-4 align-items-center">
+            <div class="col-md-4">
+                <div class="thumbnail bg-black ratio ratio-16x9 rounded overflow-hidden">
+                    <img id="thumb" src="https://via.placeholder.com/340x190/111/eee?text=Thumbnail" alt="thumbnail" class="img-fluid">
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="info">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <h3 id="title" class="mb-0">Your Video Title</h3>
+                        <span id="duration" class="badge bg-secondary fs-6">3:45 • YouTube</span>
+                    </div>
+
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <button class="btn btn-success btn-lg w-100 mb-3 fw-bold py-3" onclick="fakeDownload('MP3')">
+                                ⬇️ Download MP3
+                            </button>
+                            <select id="mp3-quality" class="form-select form-select-lg">
+                                <option>MP3 320kbps (high quality)</option>
+                                <option>MP3 256kbps</option>
+                                <option>MP3 192kbps</option>
+                                <option>MP3 128kbps (smaller file)</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <button class="btn btn-danger btn-lg w-100 mb-3 fw-bold py-3" onclick="fakeDownload('Video')">
+                                ⬇️ Download Video
+                            </button>
+                            <select id="video-quality" class="form-select form-select-lg">
+                                <option>Best video (highest available)</option>
+                                <option>1080p</option>
+                                <option selected>720p HD (recommended)</option>
+                                <option>480p</option>
+                                <option>360p</option>
+                                <option>240p (small file)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-check mt-4">
+                        <input class="form-check-input" type="checkbox" id="useAsCover">
+                        <label class="form-check-label fs-5" for="useAsCover">
+                            Use video thumbnail as album cover
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <section id="history" class="py-5 bg-light">
+        <div class="container text-center">
+            <h2 class="mb-4">Your Download History</h2>
+            <p class="text-muted fst-italic lead">Nothing downloaded yet.<br>History will be saved per account once login is added.</p>
+        </div>
+    </section>
+
+    <section id="faq" class="py-5">
+        <div class="container">
+            <h2 class="text-center mb-5">Frequently Asked Questions</h2>
+            <div class="accordion" id="faqAccordion">
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                            How does this downloader work?
+                        </button>
+                    </h2>
+                    <div id="faq1" class="accordion-collapse collapse">
+                        <div class="accordion-body">
+                            Paste the video URL (or song title), choose format/quality, click download. Everything happens locally on your computer — no uploads, no servers involved.
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                            Which websites are supported?
+                        </button>
+                    </h2>
+                    <div id="faq2" class="accordion-collapse collapse">
+                        <div class="accordion-body">
+                            YouTube (including Shorts), TikTok, Instagram Reels, Facebook videos, Vimeo, Twitter/X videos, SoundCloud, and many more (over 1000 sites via yt-dlp).
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                            Is it free, safe and private?
+                        </button>
+                    </h2>
+                    <div id="faq3" class="accordion-collapse collapse">
+                        <div class="accordion-body">
+                            Completely free. No ads, no registration required (for now), no data leaves your computer. 100% offline after setup.
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+                            Can I download playlists or entire channels?
+                        </button>
+                    </h2>
+                    <div id="faq4" class="accordion-collapse collapse">
+                        <div class="accordion-body">
+                            Yes — just paste the playlist or channel URL. We'll add a progress bar and batch download support later.
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5">
+                            Will this work on my phone or tablet?
+                        </button>
+                    </h2>
+                    <div id="faq5" class="accordion-collapse collapse">
+                        <div class="accordion-body">
+                            The site is mobile-friendly. Later we can turn it into a Progressive Web App (PWA) so you can add it to your home screen like a real app.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="about" class="py-5 bg-light" style="min-height: 70vh;">
+        <div class="container text-center">
+            <h2 class="mb-4">About This Project</h2>
+            <p class="lead mb-4">Local end-of-year project — simple video/audio downloader that runs entirely on your computer.</p>
+            <p>No cloud services, no tracking, no limits.</p>
+            <p class="mt-4">Current version: frontend + demo buttons</p>
+            <p>Next: real downloads via yt-dlp, basic user login for history, playlist support, better error messages.</p>
+        </div>
+    </section>
+
+    <footer class="bg-dark text-white text-center py-4">
+        <p class="mb-0">dlwip • Private local downloader • End-of-year project</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="script.js"></script>
+</body>
+</html>
