@@ -1,50 +1,74 @@
-function searchVideo() {
+async function searchVideo() {
     const input = document.getElementById('urlInput').value.trim();
     const result = document.getElementById('result');
     
     if (!input) {
-        alert("Please enter a URL or song title first.");
+        alert("Paste a real URL first (YouTube, TikTok, etc.)");
         return;
     }
 
     result.style.display = 'block';
     
-    // fake data for demo
-    document.getElementById('title').textContent = "Your Video Title";
-    document.getElementById('duration').textContent = "3:45 • YouTube";
-    document.getElementById('thumb').src = "https://via.placeholder.com/340x190/111/eee?text=Thumbnail";
+    // Show loading WITHOUT destroying the whole section
+    document.getElementById('title').textContent = '⏳ Fetching info with yt-dlp...';
+    document.getElementById('thumb').src = 'https://via.placeholder.com/340x190/111/eee?text=Loading...';
 
-    // Auto-scroll to result
-    result.scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
+    try {
+        const res = await fetch('/api/info', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: input })
+        });
+        const data = await res.json();
 
-function fakeDownload(type) {
-    alert(`🎉 ${type} clicked!\n\nStill demo mode for now.\n\nReal yt-dlp downloads coming next step.`);
-}
+        if (data.error) throw new Error(data.error);
 
-// Active nav highlight
-window.addEventListener('scroll', () => {
-    let current = '';
-    document.querySelectorAll('section[id]').forEach(section => {
-        const sectionTop = section.offsetTop;
-        if (scrollY >= sectionTop - 100) {
-            current = section.getAttribute('id');
-        }
-    });
-    document.querySelectorAll('.top-nav a').forEach(link => {
-        link.classList.remove('active');
-        if (link.getAttribute('href') === `#${current}`) {
-            link.classList.add('active');
-        }
-    });
+        // Now fill the real info
+        document.getElementById('title').textContent = data.title;
+        document.getElementById('duration').textContent = `${data.duration} • ${data.site}`;
+        document.getElementById('thumb').src = data.thumbnail;
 
-    // Navbar scroll effect
-    const header = document.querySelector('header');
-    if (window.scrollY > 50) {
-        header.classList.add('scrolled');
-    } else {
-        header.classList.remove('scrolled');
+        result.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    } catch (err) {
+        document.getElementById('title').textContent = `❌ ${err.message}`;
+        document.getElementById('thumb').src = 'https://via.placeholder.com/340x190/111/eee?text=Error';
     }
-});
+}
 
-// FAQ toggle not needed anymore because Bootstrap accordion handles it
+async function download(type) {
+    const url = document.getElementById('urlInput').value.trim();
+    const title = document.getElementById('title').textContent;
+    let quality = type === 'MP3' 
+        ? document.getElementById('mp3-quality').value 
+        : document.getElementById('video-quality').value;
+
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '⏳ Downloading...';
+    btn.disabled = true;
+
+    try {
+        const res = await fetch('/api/download', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url, type, quality, title })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            alert(`✅ ${type} saved! Check your "downloads" folder.`);
+        } else {
+            alert('Error: ' + (data.error || 'unknown'));
+        }
+    } catch (err) {
+        alert('Make sure app.js is running (node app.js)');
+    }
+
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+}
+
+// Keep your old fakeDownload line
+function fakeDownload(type) { download(type); }
+
+// Your scroll listener stays exactly the same (copy it from your old script.js)
