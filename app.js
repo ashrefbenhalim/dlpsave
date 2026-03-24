@@ -19,11 +19,15 @@ app.post('/api/info', (req, res) => {
         if (error) return res.status(400).json({ error: error.message });
         try {
             const info = JSON.parse(stdout);
+            const heights = info.formats ? [...new Set(info.formats.filter(f => f.height).map(f => f.height))] : [];
+            const maxHeight = Math.max(...heights, 240);
+
             res.json({
                 title: info.title || 'Unknown Title',
                 duration: `${Math.floor(info.duration/60)}:${(info.duration%60).toString().padStart(2,'0')}`,
                 thumbnail: info.thumbnail || 'https://via.placeholder.com/340x190/111/eee?text=No+Thumbnail',
-                site: info.extractor_key || 'Video'
+                site: info.extractor_key || 'Video',
+                maxHeight: maxHeight
             });
         } catch (e) {
             res.status(400).json({ error: 'Could not read video info' });
@@ -36,25 +40,18 @@ app.post('/api/download', (req, res) => {
     let cmd = `yt-dlp --output "${DOWNLOAD_FOLDER}/%(title)s.%(ext)s"`;
 
     if (type === 'MP3') {
-        let aq = '0'; // best
-        if (quality.includes('320')) aq = '0';
-        else if (quality.includes('256')) aq = '1';
-        else if (quality.includes('192')) aq = '2';
-        else if (quality.includes('128')) aq = '4';
-
+        let aq = quality.includes('320') ? '0' : quality.includes('256') ? '1' : quality.includes('192') ? '2' : '4';
         cmd += ` -x --audio-format mp3 --audio-quality ${aq}`;
         if (useCover) cmd += ` --embed-thumbnail --convert-thumbnails jpg`;
     } else {
-        let format = 'bestvideo+bestaudio/best';
-        if (quality.includes('1080')) format = 'bestvideo[height<=1080]+bestaudio/best';
-        else if (quality.includes('720')) format = 'bestvideo[height<=720]+bestaudio/best';
-        else if (quality.includes('480')) format = 'bestvideo[height<=480]+bestaudio/best';
-        else if (quality.includes('360')) format = 'bestvideo[height<=360]+bestaudio/best';
-        else if (quality.includes('240')) format = 'bestvideo[height<=240]+bestaudio/best';
-
-        cmd += ` -f "${format}" --merge-output-format mp4`;
+        let f = 'bestvideo+bestaudio/best';
+        if (quality === '1080') f = 'bestvideo[height<=1080]+bestaudio/best';
+        else if (quality === '720') f = 'bestvideo[height<=720]+bestaudio/best';
+        else if (quality === '480') f = 'bestvideo[height<=480]+bestaudio/best';
+        else if (quality === '360') f = 'bestvideo[height<=360]+bestaudio/best';
+        else if (quality === '240') f = 'bestvideo[height<=240]+bestaudio/best';
+        cmd += ` -f "${f}" --merge-output-format mp4`;
     }
-
     cmd += ` "${url}"`;
 
     exec(cmd, { shell: true, timeout: 300000 }, (error) => {
@@ -70,16 +67,10 @@ app.post('/api/download', (req, res) => {
         });
         fs.writeFileSync(HISTORY_FILE, JSON.stringify(history.slice(0, 10)));
 
-        res.json({ success: true, message: `Saved to ${DOWNLOAD_FOLDER} folder!` });
+        res.json({ success: true, message: 'Download finished' });
     });
 });
 
-app.get('/api/history', (req, res) => {
-    if (fs.existsSync(HISTORY_FILE)) {
-        res.json(JSON.parse(fs.readFileSync(HISTORY_FILE)));
-    } else res.json([]);
-});
+app.get('/api/history', (req, res) => res.json(fs.existsSync(HISTORY_FILE) ? JSON.parse(fs.readFileSync(HISTORY_FILE)) : []));
 
-app.listen(PORT, () => {
-    console.log(`✅ dlwip running at http://localhost:${PORT}`);
-});
+app.listen(PORT, () => console.log(`✅ dlwip running at http://localhost:${PORT}`));

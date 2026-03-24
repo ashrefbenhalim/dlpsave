@@ -44,14 +44,14 @@
         <div class="row g-4 align-items-center">
             <div class="col-md-4">
                 <div class="thumbnail bg-black ratio ratio-16x9 rounded overflow-hidden">
-                    <img id="thumb" src="https://via.placeholder.com/340x190/111/eee?text=Thumbnail" alt="thumbnail" class="img-fluid">
+                    <img id="thumb" src="https://via.placeholder.com/340x190/111/eee?text=Loading..." alt="thumbnail" class="img-fluid">
                 </div>
             </div>
             <div class="col-md-8">
                 <div class="info">
                     <div class="d-flex align-items-center gap-3 mb-3">
-                        <h3 id="title" class="mb-0">Your Video Title</h3>
-                        <span id="duration" class="badge bg-secondary fs-6">3:45 • YouTube</span>
+                        <h3 id="title" class="mb-0">⏳ Fetching video info...</h3>
+                        <span id="duration" class="badge bg-secondary fs-6">— • —</span>
                     </div>
 
                     <div class="row g-4">
@@ -72,12 +72,12 @@
                                 ⬇️ Download Video
                             </button>
                             <select id="video-quality" class="form-select form-select-lg">
-                                <option>Best video (highest available)</option>
-                                <option>1080p</option>
-                                <option selected>720p HD (recommended)</option>
-                                <option>480p</option>
-                                <option>360p</option>
-                                <option>240p (small file)</option>
+                                <option value="best">Best video (highest available)</option>
+                                <option value="1080">1080p</option>
+                                <option value="720" selected>720p HD (recommended)</option>
+                                <option value="480">480p</option>
+                                <option value="360">360p</option>
+                                <option value="240">240p (small file)</option>
                             </select>
                         </div>
                     </div>
@@ -90,6 +90,19 @@
                     </div>
                 </div>
             </div>
+        </div>
+
+        <!-- PROGRESS BAR -->
+        <div id="progressContainer" class="mt-4" style="display: none;">
+            <div class="progress" style="height: 28px;">
+                <div id="progressBar" 
+                    class="progress-bar progress-bar-striped progress-bar-animated bg-primary" 
+                    role="progressbar" 
+                    style="width: 0%;">
+                    0%
+                </div>
+            </div>
+            <p id="progressText" class="text-center mt-2 fw-bold small text-primary">Downloading with yt-dlp...</p>
         </div>
     </div>
 

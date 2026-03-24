@@ -8,10 +8,9 @@ async function searchVideo() {
     }
 
     result.style.display = 'block';
-    
-    // Show loading WITHOUT destroying the whole section
-    document.getElementById('title').textContent = '⏳ Fetching info with yt-dlp...';
+    document.getElementById('title').textContent = '⏳ Fetching video info with yt-dlp...';
     document.getElementById('thumb').src = 'https://via.placeholder.com/340x190/111/eee?text=Loading...';
+    document.getElementById('duration').textContent = '— • —';
 
     try {
         const res = await fetch('/api/info', {
@@ -23,15 +22,29 @@ async function searchVideo() {
 
         if (data.error) throw new Error(data.error);
 
-        // Now fill the real info
         document.getElementById('title').textContent = data.title;
         document.getElementById('duration').textContent = `${data.duration} • ${data.site}`;
         document.getElementById('thumb').src = data.thumbnail;
 
+        // Grey-out unsupported qualities
+        const select = document.getElementById('video-quality');
+        const options = select.options;
+        for (let i = 0; i < options.length; i++) {
+            const val = options[i].value;
+            if (val === 'best') continue;
+            const reqHeight = parseInt(val);
+            if (reqHeight > data.maxHeight) {
+                options[i].disabled = true;
+                options[i].style.color = '#999';
+            } else {
+                options[i].disabled = false;
+                options[i].style.color = '';
+            }
+        }
+
         result.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } catch (err) {
         document.getElementById('title').textContent = `❌ ${err.message}`;
-        document.getElementById('thumb').src = 'https://via.placeholder.com/340x190/111/eee?text=Error';
     }
 }
 
@@ -44,9 +57,18 @@ async function download(type) {
 
     const useCover = document.getElementById('useAsCover').checked;
 
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+
+    progressContainer.style.display = 'block';
+    progressBar.style.width = '0%';
+    progressBar.textContent = '0%';
+    progressText.textContent = 'Downloading with yt-dlp...';
+
     const btn = event.target;
     const originalText = btn.innerHTML;
-    btn.innerHTML = '⏳ Downloading...';
+    btn.innerHTML = '⏳ Starting...';
     btn.disabled = true;
 
     try {
@@ -58,21 +80,30 @@ async function download(type) {
         const data = await res.json();
 
         if (data.success) {
-            alert(`✅ ${type} saved to downloads folder!\n\n${useCover && type === 'MP3' ? 'Thumbnail is now album art 🎵' : ''}`);
-        } else {
-            alert('Error: ' + (data.error || 'unknown'));
+            // Simple smooth animation to 100% (never stuck)
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 25 + 5;
+                if (progress >= 100) progress = 100;
+                progressBar.style.width = progress + '%';
+                progressBar.textContent = Math.round(progress) + '%';
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    progressText.innerHTML = `✅ <strong>Done!</strong>`;
+                    setTimeout(() => {
+                        progressContainer.style.display = 'none';
+                        alert(`✅ ${type} saved to downloads folder!\n\n${useCover && type === 'MP3' ? 'Thumbnail is now album art 🎵' : ''}`);
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                    }, 800);
+                }
+            }, 120);
         }
     } catch (err) {
-        alert('Make sure app.js is still running');
+        progressText.textContent = '❌ Error';
+        btn.innerHTML = originalText;
+        btn.disabled = false;
     }
-
-    btn.innerHTML = originalText;
-    btn.disabled = false;
 }
 
 function fakeDownload(type) { download(type); }
-
-// Keep your old fakeDownload line
-function fakeDownload(type) { download(type); }
-
-// Your scroll listener stays exactly the same (copy it from your old script.js)
