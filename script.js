@@ -42,6 +42,8 @@ async function download(type) {
         ? document.getElementById('mp3-quality').value 
         : document.getElementById('video-quality').value;
 
+    const useCover = document.getElementById('useAsCover').checked;
+
     const btn = event.target;
     const originalText = btn.innerHTML;
     btn.innerHTML = '⏳ Downloading...';
@@ -51,22 +53,24 @@ async function download(type) {
         const res = await fetch('/api/download', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url, type, quality, title })
+            body: JSON.stringify({ url, type, quality, title, useCover })
         });
         const data = await res.json();
 
         if (data.success) {
-            alert(`✅ ${type} saved! Check your "downloads" folder.`);
+            alert(`✅ ${type} saved to downloads folder!\n\n${useCover && type === 'MP3' ? 'Thumbnail is now album art 🎵' : ''}`);
         } else {
             alert('Error: ' + (data.error || 'unknown'));
         }
     } catch (err) {
-        alert('Make sure app.js is running (node app.js)');
+        alert('Make sure app.js is still running');
     }
 
     btn.innerHTML = originalText;
     btn.disabled = false;
 }
+
+function fakeDownload(type) { download(type); }
 
 // Keep your old fakeDownload line
 function fakeDownload(type) { download(type); }
