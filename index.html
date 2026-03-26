@@ -12,7 +12,7 @@
     <header class="bg-primary text-white py-3 shadow-sm fixed-top">
         <div class="container d-flex justify-content-between align-items-center">
             <div class="logo fs-3 fw-bold">
-                <a href="#" class="text-white text-decoration-none">dlwip</a>
+                <a href="#" onclick="resetPage(); return false;" class="text-white text-decoration-none">dlwip</a>
             </div>
             
             <nav class="top-nav d-flex align-items-center">
@@ -82,34 +82,47 @@
                         </div>
                     </div>
 
-                    <div class="form-check mt-4">
-                        <input class="form-check-input" type="checkbox" id="useAsCover">
-                        <label class="form-check-label fs-5" for="useAsCover">
-                            Use video thumbnail as album cover
-                        </label>
+                    <!-- Checkboxes - now perfectly aligned and nudged up -->
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="useAsCover">
+                                <label class="form-check-label fs-5" for="useAsCover">
+                                    Use video thumbnail as album cover
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="playlistMode" disabled>
+                                <label class="form-check-label fs-5" for="playlistMode" id="playlistLabel">
+                                    Download entire playlist if available
+                                </label>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- PROGRESS BAR -->
+        <!-- Progress bar -->
         <div id="progressContainer" class="mt-4" style="display: none;">
             <div class="progress" style="height: 28px;">
-                <div id="progressBar" 
-                    class="progress-bar progress-bar-striped progress-bar-animated bg-primary" 
-                    role="progressbar" 
-                    style="width: 0%;">
-                    0%
-                </div>
+                <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 0%;">0%</div>
             </div>
             <p id="progressText" class="text-center mt-2 fw-bold small text-primary">Downloading with yt-dlp...</p>
         </div>
     </div>
 
     <section id="history" class="py-5 bg-light">
-        <div class="container text-center">
-            <h2 class="mb-4">Your Download History</h2>
-            <p class="text-muted fst-italic lead">Nothing downloaded yet.<br>History will be saved per account once login is added.</p>
+        <div class="container">
+            <h2 class="mb-4 text-center">Your Download History</h2>
+            <div id="historyList" class="list-group">
+                <!-- Filled by JavaScript -->
+            </div>
+            <p id="historyEmpty" class="text-muted fst-italic text-center lead mt-4" style="display: none;">
+                Nothing downloaded yet.<br>Downloads will appear here automatically.
+            </p>
         </div>
     </section>
 

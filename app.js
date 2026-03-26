@@ -11,7 +11,9 @@ app.use(express.static('.'));
 app.use(express.json());
 
 if (!fs.existsSync(DOWNLOAD_FOLDER)) fs.mkdirSync(DOWNLOAD_FOLDER);
-if (!fs.existsSync(HISTORY_FILE)) fs.writeFileSync(HISTORY_FILE, '[]');
+
+// HISTORY ALWAYS RESETS ON SERVER START
+fs.writeFileSync(HISTORY_FILE, '[]');
 
 app.post('/api/info', (req, res) => {
     const url = req.body.url.trim();
@@ -58,19 +60,34 @@ app.post('/api/download', (req, res) => {
         if (error) return res.status(400).json({ error: error.message });
 
         let history = [];
-        if (fs.existsSync(HISTORY_FILE)) history = JSON.parse(fs.readFileSync(HISTORY_FILE));
         history.unshift({
+            url: url,
             title: title || 'Unknown',
             type: type,
             time: new Date().toLocaleString('fr-TN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }),
             file: `${title || 'file'}.${type === 'MP3' ? 'mp3' : 'mp4'}`
         });
-        fs.writeFileSync(HISTORY_FILE, JSON.stringify(history.slice(0, 10)));
 
+        fs.writeFileSync(HISTORY_FILE, JSON.stringify(history.slice(0, 10)));
         res.json({ success: true, message: 'Download finished' });
     });
 });
 
-app.get('/api/history', (req, res) => res.json(fs.existsSync(HISTORY_FILE) ? JSON.parse(fs.readFileSync(HISTORY_FILE)) : []));
+app.post('/api/history/delete', (req, res) => {
+    const { index } = req.body;
+    let history = fs.existsSync(HISTORY_FILE) ? JSON.parse(fs.readFileSync(HISTORY_FILE)) : [];
+    history.splice(index, 1);
+    fs.writeFileSync(HISTORY_FILE, JSON.stringify(history));
+    res.json({ success: true });
+});
+
+app.post('/api/history/clear', (req, res) => {
+    fs.writeFileSync(HISTORY_FILE, '[]');
+    res.json({ success: true });
+});
+
+app.get('/api/history', (req, res) => {
+    res.json(fs.existsSync(HISTORY_FILE) ? JSON.parse(fs.readFileSync(HISTORY_FILE)) : []);
+});
 
 app.listen(PORT, () => console.log(`✅ dlwip running at http://localhost:${PORT}`));
