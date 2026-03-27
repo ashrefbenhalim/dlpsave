@@ -12,10 +12,10 @@ app.use(express.json());
 
 if (!fs.existsSync(DOWNLOAD_FOLDER)) fs.mkdirSync(DOWNLOAD_FOLDER);
 
-// HISTORY ALWAYS RESETS ON SERVER START
-fs.writeFileSync(HISTORY_FILE, '[]');
+// History now loads correctly and adds every new download
+let history = fs.existsSync(HISTORY_FILE) ? JSON.parse(fs.readFileSync(HISTORY_FILE)) : [];
 
-app.post('/api/info', (req, res) => {
+app.post('/api/info', (req, res) => { /* unchanged - your current info route */ 
     const url = req.body.url.trim();
     exec(`yt-dlp --dump-json "${url}"`, { shell: true, timeout: 15000 }, (error, stdout) => {
         if (error) return res.status(400).json({ error: error.message });
@@ -33,6 +33,24 @@ app.post('/api/info', (req, res) => {
             });
         } catch (e) {
             res.status(400).json({ error: 'Could not read video info' });
+        }
+    });
+});
+
+// NEW: Get list of videos in a playlist (invisible list)
+app.post('/api/playlist-videos', (req, res) => {
+    const url = req.body.url.trim();
+    exec(`yt-dlp --flat-playlist --dump-json "${url}"`, { shell: true, timeout: 30000 }, (error, stdout) => {
+        if (error) return res.status(400).json({ error: error.message });
+        try {
+            const lines = stdout.trim().split('\n').filter(Boolean);
+            const videos = lines.map(line => {
+                const info = JSON.parse(line);
+                return { url: info.url, title: info.title || 'Untitled Video' };
+            });
+            res.json(videos);
+        } catch (e) {
+            res.status(400).json({ error: 'Could not read playlist' });
         }
     });
 });
@@ -59,7 +77,6 @@ app.post('/api/download', (req, res) => {
     exec(cmd, { shell: true, timeout: 300000 }, (error) => {
         if (error) return res.status(400).json({ error: error.message });
 
-        let history = [];
         history.unshift({
             url: url,
             title: title || 'Unknown',
@@ -75,19 +92,17 @@ app.post('/api/download', (req, res) => {
 
 app.post('/api/history/delete', (req, res) => {
     const { index } = req.body;
-    let history = fs.existsSync(HISTORY_FILE) ? JSON.parse(fs.readFileSync(HISTORY_FILE)) : [];
     history.splice(index, 1);
     fs.writeFileSync(HISTORY_FILE, JSON.stringify(history));
     res.json({ success: true });
 });
 
 app.post('/api/history/clear', (req, res) => {
+    history = [];
     fs.writeFileSync(HISTORY_FILE, '[]');
     res.json({ success: true });
 });
 
-app.get('/api/history', (req, res) => {
-    res.json(fs.existsSync(HISTORY_FILE) ? JSON.parse(fs.readFileSync(HISTORY_FILE)) : []);
-});
+app.get('/api/history', (req, res) => res.json(history));
 
 app.listen(PORT, () => console.log(`✅ dlwip running at http://localhost:${PORT}`));

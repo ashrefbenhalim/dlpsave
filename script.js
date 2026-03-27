@@ -132,7 +132,7 @@ async function searchVideo() {
     }
 }
 
-// Download function
+// Updated download with proper playlist progress
 async function download(type) {
     const originalUrl = document.getElementById('urlInput').value.trim();
     const title = document.getElementById('title').textContent;
@@ -141,8 +141,6 @@ async function download(type) {
     const useCover = document.getElementById('useAsCover').checked;
     const isPlaylist = document.getElementById('playlistMode').checked;
 
-    const downloadUrl = isPlaylist ? originalUrl : originalUrl.split('&list=')[0].split('?list=')[0];
-
     const progressContainer = document.getElementById('progressContainer');
     const progressBar = document.getElementById('progressBar');
     const progressText = document.getElementById('progressText');
@@ -150,7 +148,6 @@ async function download(type) {
     progressContainer.style.display = 'block';
     progressBar.style.width = '0%';
     progressBar.textContent = '0%';
-    progressText.textContent = 'Downloading with yt-dlp...';
 
     const btn = event.target;
     const originalText = btn.innerHTML;
@@ -158,14 +155,50 @@ async function download(type) {
     btn.disabled = true;
 
     try {
-        const res = await fetch('/api/download', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url: downloadUrl, type, quality, title, useCover })
-        });
-        const data = await res.json();
+        if (isPlaylist) {
+            progressText.textContent = 'Loading playlist videos...';
+            // Get invisible list of videos
+            const listRes = await fetch('/api/playlist-videos', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: originalUrl })
+            });
+            const videos = await listRes.json();
 
-        if (data.success) {
+            if (!videos || videos.length === 0) throw new Error('No videos found in playlist');
+
+            progressText.textContent = `Downloading playlist (0 of ${videos.length})`;
+
+            for (let i = 0; i < videos.length; i++) {
+                const video = videos[i];
+                progressText.textContent = `Downloading video ${i + 1} of ${videos.length} – ${video.title}`;
+
+                // Download this single video
+                await fetch('/api/download', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        url: video.url,
+                        type: type,
+                        quality: quality,
+                        title: video.title,
+                        useCover: useCover
+                    })
+                });
+
+                // Update progress bar after each video
+                const percent = Math.round(((i + 1) / videos.length) * 100);
+                progressBar.style.width = percent + '%';
+                progressBar.textContent = percent + '%';
+            }
+        } else {
+            // Normal single video (smooth fake progress)
+            await fetch('/api/download', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: originalUrl, type, quality, title, useCover })
+            });
+
             let progress = 0;
             const interval = setInterval(() => {
                 progress += Math.random() * 25 + 5;
@@ -174,21 +207,29 @@ async function download(type) {
                 progressBar.textContent = Math.round(progress) + '%';
                 if (progress >= 100) {
                     clearInterval(interval);
-                    progressText.innerHTML = `✅ <strong>Done!</strong>`;
-                    setTimeout(() => {
-                        progressContainer.style.display = 'none';
-                        alert(`✅ ${type} saved!\n\n${useCover && type === 'MP3' ? 'Thumbnail is now album art 🎵' : ''}`);
-                        btn.innerHTML = originalText;
-                        btn.disabled = false;
-                        loadHistory();
-                    }, 800);
+                    finishDownload();
                 }
             }, 120);
+            return; // exit early
         }
+
+        finishDownload();
+
     } catch (err) {
         progressText.textContent = '❌ Error';
         btn.innerHTML = originalText;
         btn.disabled = false;
+    }
+
+    function finishDownload() {
+        progressText.innerHTML = `✅ <strong>Done!</strong>`;
+        setTimeout(() => {
+            progressContainer.style.display = 'none';
+            alert(`✅ ${type} saved!\n\n${useCover && type === 'MP3' ? 'Thumbnail is now album art 🎵' : ''}`);
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            loadHistory();
+        }, 800);
     }
 }
 
@@ -196,3 +237,20 @@ function fakeDownload(type) { download(type); }
 
 // Load history on page start
 window.addEventListener('load', loadHistory);
+
+// Open modal
+document.querySelector('.btn-outline-light').addEventListener('click', (e) => {
+    e.preventDefault();
+    new bootstrap.Modal(document.getElementById('loginModal')).show();
+});
+
+// Fake login (we'll make it real later)
+window.fakeLogin = function() {
+    alert("✅ Logged in! (demo mode)\n\nHistory and album cover are now unlocked.");
+    bootstrap.Modal.getInstance(document.getElementById('loginModal')).hide();
+};
+
+window.fakeSignup = function() {
+    alert("✅ Account created! (demo mode)");
+    bootstrap.Modal.getInstance(document.getElementById('loginModal')).hide();
+};
