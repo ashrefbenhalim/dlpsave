@@ -20,7 +20,32 @@
                 <a href="#history" class="text-white me-4 text-decoration-none">History</a>
                 <a href="#faq" class="text-white me-4 text-decoration-none">FAQ</a>
                 <a href="#about" class="text-white me-4 text-decoration-none">About</a>
-                <a href="#" class="btn btn-outline-light btn-sm">Login / Sign up</a>
+                <button class="btn btn-outline-light btn-sm" id="authBtn">Login / Sign up</button>
+
+                <!-- Auth Modal -->
+                <div class="modal fade" id="authModal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="modalTitle">Login / Register</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <input type="text" id="username" class="form-control" placeholder="Username">
+                                </div>
+                                <div class="mb-3">
+                                    <input type="password" id="password" class="form-control" placeholder="Password">
+                                </div>
+                                <div id="authMessage" class="text-danger small"></div>
+                            </div>
+                            <div class="modal-footer">
+                                <button onclick="switchMode()" class="btn btn-secondary" id="switchBtn">Create account</button>
+                                <button onclick="handleAuth()" class="btn btn-primary" id="authActionBtn">Login</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </nav>
         </div>
     </header>
@@ -207,38 +232,6 @@
     <footer class="bg-dark text-white text-center py-4">
         <p class="mb-0">dlwip • Private local downloader • End-of-year project</p>
     </footer>
-
-    <!-- Login Modal -->
-    <div class="modal fade" id="loginModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content" style="border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
-                <div class="modal-header border-0">
-                    <ul class="nav nav-tabs w-100" id="authTabs">
-                        <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#loginTab">Login</a></li>
-                        <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#signupTab">Sign up</a></li>
-                    </ul>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="tab-content">
-                        <!-- Login Tab -->
-                        <div class="tab-pane fade show active" id="loginTab">
-                            <input type="email" id="loginEmail" class="form-control mb-3" placeholder="Email">
-                            <input type="password" id="loginPass" class="form-control mb-3" placeholder="Password">
-                            <button onclick="fakeLogin()" class="btn btn-primary w-100">Login</button>
-                        </div>
-                        <!-- Sign up Tab -->
-                        <div class="tab-pane fade" id="signupTab">
-                            <input type="text" id="signupName" class="form-control mb-3" placeholder="Full name">
-                            <input type="email" id="signupEmail" class="form-control mb-3" placeholder="Email">
-                            <input type="password" id="signupPass" class="form-control mb-3" placeholder="Password">
-                            <button onclick="fakeSignup()" class="btn btn-primary w-100">Create account</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script src="script.js"></script>

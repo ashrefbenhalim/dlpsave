@@ -1,3 +1,79 @@
+// ====================== AUTH SYSTEM (must be first) ======================
+let isLoggedIn = false;
+let currentUsername = '';
+
+function showAuthModal() {
+    const modal = new bootstrap.Modal(document.getElementById('authModal'));
+    document.getElementById('authMessage').textContent = '';
+    modal.show();
+}
+
+function switchMode() {
+    const title = document.getElementById('modalTitle');
+    const btn = document.getElementById('authActionBtn');
+    const switchBtn = document.getElementById('switchBtn');
+    
+    if (title.textContent === 'Login / Register') {
+        title.textContent = 'Create Account';
+        btn.textContent = 'Register';
+        switchBtn.textContent = 'Back to Login';
+    } else {
+        title.textContent = 'Login / Register';
+        btn.textContent = 'Login';
+        switchBtn.textContent = 'Create account';
+    }
+}
+
+async function handleAuth() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const isRegister = document.getElementById('modalTitle').textContent.includes('Create');
+
+    const endpoint = isRegister ? '/api/register' : '/api/login';
+    
+    try {
+        const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+
+        if (data.success) {
+            isLoggedIn = true;
+            currentUsername = username || data.username;
+            document.getElementById('authBtn').textContent = `Logout (${currentUsername})`;
+            bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
+            
+            // Unlock features
+            document.getElementById('useAsCover').disabled = false;
+            document.getElementById('playlistMode').disabled = false;
+            loadHistory();
+        } else {
+            document.getElementById('authMessage').textContent = data.error || 'Something went wrong';
+        }
+    } catch (e) {
+        document.getElementById('authMessage').textContent = 'Connection error — is app.js running?';
+    }
+}
+
+function logout() {
+    fetch('/api/logout').then(() => {
+        isLoggedIn = false;
+        currentUsername = '';
+        document.getElementById('authBtn').textContent = 'Login / Sign up';
+        document.getElementById('useAsCover').disabled = true;
+        document.getElementById('playlistMode').disabled = true;
+        
+        // Reset history to locked view
+        document.getElementById('historyList').innerHTML = '';
+        document.getElementById('historyEmpty').innerHTML = `
+            <p class="text-muted fst-italic lead">Login to see your personal history</p>`;
+        document.getElementById('historyEmpty').style.display = 'block';
+    });
+}
+
+// ====================== REST OF YOUR CODE ======================
 // Reset page when clicking logo
 function resetPage() {
     document.getElementById('urlInput').value = '';
@@ -74,7 +150,7 @@ window.deleteHistoryItem = async function(index) {
     }
 };
 
-// Search video + grey out playlist checkbox
+// Search video
 async function searchVideo() {
     let input = document.getElementById('urlInput').value.trim();
     const result = document.getElementById('result');
@@ -110,30 +186,20 @@ async function searchVideo() {
         document.getElementById('duration').textContent = `${data.duration} • ${data.site}`;
         document.getElementById('thumb').src = data.thumbnail;
 
-        // Grey-out video qualities
-        const select = document.getElementById('video-quality');
-        const options = select.options;
-        for (let i = 0; i < options.length; i++) {
-            const val = options[i].value;
-            if (val === 'best') continue;
-            const reqHeight = parseInt(val);
-            if (reqHeight > data.maxHeight) {
-                options[i].disabled = true;
-                options[i].style.color = '#999';
-            } else {
-                options[i].disabled = false;
-                options[i].style.color = '';
-            }
-        }
-
         result.scrollIntoView({ behavior: 'smooth', block: 'center' });
     } catch (err) {
         document.getElementById('title').textContent = `❌ ${err.message}`;
     }
 }
 
-// Updated download with proper playlist progress
+// Download function
 async function download(type) {
+    if (!isLoggedIn) {
+        alert('Please login first to unlock downloads, history and album cover');
+        showAuthModal();
+        return;
+    }
+
     const originalUrl = document.getElementById('urlInput').value.trim();
     const title = document.getElementById('title').textContent;
     let quality = type === 'MP3' ? document.getElementById('mp3-quality').value : document.getElementById('video-quality').value;
@@ -157,7 +223,6 @@ async function download(type) {
     try {
         if (isPlaylist) {
             progressText.textContent = 'Loading playlist videos...';
-            // Get invisible list of videos
             const listRes = await fetch('/api/playlist-videos', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -173,7 +238,6 @@ async function download(type) {
                 const video = videos[i];
                 progressText.textContent = `Downloading video ${i + 1} of ${videos.length} – ${video.title}`;
 
-                // Download this single video
                 await fetch('/api/download', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -182,21 +246,20 @@ async function download(type) {
                         type: type,
                         quality: quality,
                         title: video.title,
-                        useCover: useCover
+                        useCover: useCover,
+                        isPlaylist: false
                     })
                 });
 
-                // Update progress bar after each video
                 const percent = Math.round(((i + 1) / videos.length) * 100);
                 progressBar.style.width = percent + '%';
                 progressBar.textContent = percent + '%';
             }
         } else {
-            // Normal single video (smooth fake progress)
             await fetch('/api/download', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: originalUrl, type, quality, title, useCover })
+                body: JSON.stringify({ url: originalUrl, type, quality, title, useCover, isPlaylist: false })
             });
 
             let progress = 0;
@@ -210,15 +273,13 @@ async function download(type) {
                     finishDownload();
                 }
             }, 120);
-            return; // exit early
+            return;
         }
 
         finishDownload();
 
     } catch (err) {
         progressText.textContent = '❌ Error';
-        btn.innerHTML = originalText;
-        btn.disabled = false;
     }
 
     function finishDownload() {
@@ -238,19 +299,11 @@ function fakeDownload(type) { download(type); }
 // Load history on page start
 window.addEventListener('load', loadHistory);
 
-// Open modal
-document.querySelector('.btn-outline-light').addEventListener('click', (e) => {
-    e.preventDefault();
-    new bootstrap.Modal(document.getElementById('loginModal')).show();
-});
-
-// Fake login (we'll make it real later)
-window.fakeLogin = function() {
-    alert("✅ Logged in! (demo mode)\n\nHistory and album cover are now unlocked.");
-    bootstrap.Modal.getInstance(document.getElementById('loginModal')).hide();
-};
-
-window.fakeSignup = function() {
-    alert("✅ Account created! (demo mode)");
-    bootstrap.Modal.getInstance(document.getElementById('loginModal')).hide();
+// Attach the auth button (only once, at the end)
+document.getElementById('authBtn').onclick = function() {
+    if (isLoggedIn) {
+        logout();
+    } else {
+        showAuthModal();
+    }
 };
