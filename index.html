@@ -20,44 +20,19 @@
                 <a href="#history" class="text-white me-4 text-decoration-none">History</a>
                 <a href="#faq" class="text-white me-4 text-decoration-none">FAQ</a>
                 <a href="#about" class="text-white me-4 text-decoration-none">About</a>
-                <button class="btn btn-outline-light btn-sm" id="authBtn">Login / Sign up</button>
-
-                <!-- Auth Modal -->
-                <div class="modal fade" id="authModal" tabindex="-1">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="modalTitle">Login / Register</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body">
-                                <div class="mb-3">
-                                    <input type="text" id="username" class="form-control" placeholder="Username">
-                                </div>
-                                <div class="mb-3">
-                                    <input type="password" id="password" class="form-control" placeholder="Password">
-                                </div>
-                                <div id="authMessage" class="text-danger small"></div>
-                            </div>
-                            <div class="modal-footer">
-                                <button onclick="switchMode()" class="btn btn-secondary" id="switchBtn">Create account</button>
-                                <button onclick="handleAuth()" class="btn btn-primary" id="authActionBtn">Login</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <button class="btn btn-outline-light btn-sm" id="authBtn">Login / Sign up (disabled for debug)</button>
             </nav>
         </div>
     </header>
 
     <section id="home" class="hero bg-dark text-white text-center py-5">
         <div class="container">
-            <h1 class="display-4 fw-bold">Download Videos & Audio</h1>
-            <p class="lead mb-5">Paste any URL • Videos, Playlists, MP3 • 100% local & private</p>
+            <h1 class="display-4 fw-bold">Download Videos and Audio</h1>
+            <p class="lead mb-5">Paste any URL - videos, playlists, or just the audio. Everything stays on your computer and stays private.</p>
             
             <div class="search-box mx-auto" style="max-width: 720px;">
                 <div class="input-group input-group-lg">
-                    <input type="text" id="urlInput" class="form-control" placeholder="https://youtu.be/... or song title"
+                    <input type="text" id="urlInput" class="form-control" placeholder="https://www.youtube.com/..."
                            onkeypress="if(event.key==='Enter') searchVideo()">
                     <button class="btn btn-primary" type="button" onclick="searchVideo()">→</button>
                 </div>
@@ -76,7 +51,7 @@
                 <div class="info">
                     <div class="d-flex align-items-center gap-3 mb-3">
                         <h3 id="title" class="mb-0">⏳ Fetching video info...</h3>
-                        <span id="duration" class="badge bg-secondary fs-6">— • —</span>
+                        <span id="duration" class="badge bg-secondary fs-6">- • -</span>
                     </div>
 
                     <div class="row g-4">
@@ -107,7 +82,6 @@
                         </div>
                     </div>
 
-                    <!-- Checkboxes - now perfectly aligned and nudged up -->
                     <div class="row g-3 mt-2">
                         <div class="col-md-6">
                             <div class="form-check">
@@ -130,21 +104,18 @@
             </div>
         </div>
 
-        <!-- Progress bar -->
         <div id="progressContainer" class="mt-4" style="display: none;">
             <div class="progress" style="height: 28px;">
                 <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 0%;">0%</div>
             </div>
-            <p id="progressText" class="text-center mt-2 fw-bold small text-primary">Downloading with yt-dlp...</p>
+            <p id="progressText" class="text-center mt-2 fw-bold small text-primary">Downloading...</p>
         </div>
     </div>
 
     <section id="history" class="py-5 bg-light">
         <div class="container">
             <h2 class="mb-4 text-center">Your Download History</h2>
-            <div id="historyList" class="list-group">
-                <!-- Filled by JavaScript -->
-            </div>
+            <div id="historyList" class="list-group"></div>
             <p id="historyEmpty" class="text-muted fst-italic text-center lead mt-4" style="display: none;">
                 Nothing downloaded yet.<br>Downloads will appear here automatically.
             </p>
@@ -163,7 +134,7 @@
                     </h2>
                     <div id="faq1" class="accordion-collapse collapse">
                         <div class="accordion-body">
-                            Paste the video URL (or song title), choose format/quality, click download. Everything happens locally on your computer — no uploads, no servers involved.
+                            Paste the video or song URL (or even a playlist), pick your format and quality, and hit download. Everything runs right on your computer - no uploads, no servers, no one else sees what you're downloading.
                         </div>
                     </div>
                 </div>
@@ -175,7 +146,7 @@
                     </h2>
                     <div id="faq2" class="accordion-collapse collapse">
                         <div class="accordion-body">
-                            YouTube (including Shorts), TikTok, Instagram Reels, Facebook videos, Vimeo, Twitter/X videos, SoundCloud, and many more (over 1000 sites via yt-dlp).
+                            YouTube (including Shorts), TikTok, Instagram Reels, Facebook videos, Vimeo, Twitter/X videos, SoundCloud, and over 1000 more sites - all thanks to yt-dlp.
                         </div>
                     </div>
                 </div>
@@ -187,7 +158,7 @@
                     </h2>
                     <div id="faq3" class="accordion-collapse collapse">
                         <div class="accordion-body">
-                            Completely free. No ads, no registration required (for now), no data leaves your computer. 100% offline after setup.
+                            Completely free. No ads, no registration needed, and nothing ever leaves your computer. 100% offline after you open the site.
                         </div>
                     </div>
                 </div>
@@ -199,7 +170,7 @@
                     </h2>
                     <div id="faq4" class="accordion-collapse collapse">
                         <div class="accordion-body">
-                            Yes — just paste the playlist or channel URL. We'll add a progress bar and batch download support later.
+                            Yes - just paste the playlist or channel URL. The playlist checkbox will handle the rest.
                         </div>
                     </div>
                 </div>
@@ -211,7 +182,7 @@
                     </h2>
                     <div id="faq5" class="accordion-collapse collapse">
                         <div class="accordion-body">
-                            The site is mobile-friendly. Later we can turn it into a Progressive Web App (PWA) so you can add it to your home screen like a real app.
+                            The site is already mobile-friendly. Later we can turn it into a Progressive Web App so you can add it to your home screen like a real app.
                         </div>
                     </div>
                 </div>
@@ -222,10 +193,8 @@
     <section id="about" class="py-5 bg-light" style="min-height: 70vh;">
         <div class="container text-center">
             <h2 class="mb-4">About This Project</h2>
-            <p class="lead mb-4">Local end-of-year project — simple video/audio downloader that runs entirely on your computer.</p>
-            <p>No cloud services, no tracking, no limits.</p>
-            <p class="mt-4">Current version: frontend + demo buttons</p>
-            <p>Next: real downloads via yt-dlp, basic user login for history, playlist support, better error messages.</p>
+            <p class="lead mb-4">A simple local video and audio downloader I built as my end-of-year project. No cloud, no tracking, no limits.</p>
+            <p>Everything happens on your own computer.</p>
         </div>
     </section>
 

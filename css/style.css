@@ -15,7 +15,7 @@ body {
 }
 
 header {
-    padding: 1rem 0;   /* reduces vertical padding a little */
+    padding: 1rem 0;
 }
 
 .btn-primary,
@@ -89,10 +89,12 @@ header {
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
 }
 
-.top-nav a.active {
-    color: #0b5ed7 !important;
-    text-shadow: 0 0 12px #0b5ed7;
-    font-weight: 600;
+/* Nav hover effect */
+.top-nav a:hover {
+    background-color: #0b5ed7;
+    color: white !important;
+    border-radius: 6px;
+    padding: 6px 14px;
     transition: all 0.3s ease;
 }
 

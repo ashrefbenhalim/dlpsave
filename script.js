@@ -1,87 +1,11 @@
-// ====================== AUTH SYSTEM (must be first) ======================
-let isLoggedIn = false;
-let currentUsername = '';
-
-function showAuthModal() {
-    const modal = new bootstrap.Modal(document.getElementById('authModal'));
-    document.getElementById('authMessage').textContent = '';
-    modal.show();
-}
-
-function switchMode() {
-    const title = document.getElementById('modalTitle');
-    const btn = document.getElementById('authActionBtn');
-    const switchBtn = document.getElementById('switchBtn');
-    
-    if (title.textContent === 'Login / Register') {
-        title.textContent = 'Create Account';
-        btn.textContent = 'Register';
-        switchBtn.textContent = 'Back to Login';
-    } else {
-        title.textContent = 'Login / Register';
-        btn.textContent = 'Login';
-        switchBtn.textContent = 'Create account';
-    }
-}
-
-async function handleAuth() {
-    const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value.trim();
-    const isRegister = document.getElementById('modalTitle').textContent.includes('Create');
-
-    const endpoint = isRegister ? '/api/register' : '/api/login';
-    
-    try {
-        const res = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password })
-        });
-        const data = await res.json();
-
-        if (data.success) {
-            isLoggedIn = true;
-            currentUsername = username || data.username;
-            document.getElementById('authBtn').textContent = `Logout (${currentUsername})`;
-            bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
-            
-            // Unlock features
-            document.getElementById('useAsCover').disabled = false;
-            document.getElementById('playlistMode').disabled = false;
-            loadHistory();
-        } else {
-            document.getElementById('authMessage').textContent = data.error || 'Something went wrong';
-        }
-    } catch (e) {
-        document.getElementById('authMessage').textContent = 'Connection error — is app.js running?';
-    }
-}
-
-function logout() {
-    fetch('/api/logout').then(() => {
-        isLoggedIn = false;
-        currentUsername = '';
-        document.getElementById('authBtn').textContent = 'Login / Sign up';
-        document.getElementById('useAsCover').disabled = true;
-        document.getElementById('playlistMode').disabled = true;
-        
-        // Reset history to locked view
-        document.getElementById('historyList').innerHTML = '';
-        document.getElementById('historyEmpty').innerHTML = `
-            <p class="text-muted fst-italic lead">Login to see your personal history</p>`;
-        document.getElementById('historyEmpty').style.display = 'block';
-    });
-}
-
-// ====================== REST OF YOUR CODE ======================
-// Reset page when clicking logo
+// This function clears the search box and hides the result panel
 function resetPage() {
     document.getElementById('urlInput').value = '';
     document.getElementById('result').style.display = 'none';
     document.getElementById('progressContainer').style.display = 'none';
 }
 
-// Load history
+// This function loads the download history from the server and builds the list
 async function loadHistory() {
     try {
         const res = await fetch('/api/history');
@@ -109,16 +33,19 @@ async function loadHistory() {
         };
         list.appendChild(clearBtn);
 
-        history.forEach((item, index) => {
+        history.forEach((item) => {
             const div = document.createElement('div');
             div.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
             div.innerHTML = `
-                <div style="flex: 1; cursor: pointer;" onclick="handleHistoryClick(${index})">
+                <div style="flex: 1; cursor: pointer;" onclick="loadVideoFromHistory('${item.url}', '${item.type}', '${item.quality}', ${item.useCover})">
                     <strong>${item.title}</strong><br>
                     <small class="text-muted">${item.type} • ${item.time}</small>
                 </div>
                 <span class="badge bg-primary me-3">${item.file.split('.').pop().toUpperCase()}</span>
-                <button onclick="deleteHistoryItem(${index}); event.stopImmediatePropagation();" class="btn btn-sm btn-danger">✕</button>
+                <button onclick="renameHistoryItem(${item.id}); event.stopImmediatePropagation(); return false;" 
+                        class="btn btn-sm btn-outline-secondary me-1">✏️</button>
+                <button onclick="deleteHistoryItem(${item.id}); event.stopImmediatePropagation(); return false;" 
+                        class="btn btn-sm btn-outline-danger">−</button>
             `;
             list.appendChild(div);
         });
@@ -127,30 +54,45 @@ async function loadHistory() {
     }
 }
 
-window.handleHistoryClick = function(index) {
-    fetch('/api/history')
-        .then(r => r.json())
-        .then(history => {
-            const item = history[index];
-            if (item && item.url) {
-                document.getElementById('urlInput').value = item.url;
-                searchVideo();
-            }
-        });
-};
+// This function puts a saved video back into the search box and restores its old settings
+async function loadVideoFromHistory(url, type, quality, useCover) {
+    document.getElementById('urlInput').value = url;
+    await searchVideo();
 
-window.deleteHistoryItem = async function(index) {
-    if (confirm('Delete this item?')) {
-        await fetch('/api/history/delete', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ index })
-        });
-        loadHistory();
+    if (type === 'MP3') {
+        document.getElementById('mp3-quality').value = quality;
+        document.getElementById('useAsCover').checked = useCover;
+    } 
+    else {
+        document.getElementById('video-quality').value = quality;
+        document.getElementById('useAsCover').checked = false;
     }
-};
+}
 
-// Search video
+// This function deletes one item from history
+async function deleteHistoryItem(id) {
+    if (!confirm('Delete this download from history?')) return;
+    await fetch('/api/history/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+    });
+    loadHistory();
+}
+
+// This function lets you rename a history item (title only, file stays the same)
+async function renameHistoryItem(id) {
+    const newTitle = prompt('New title for this download?');
+    if (!newTitle || newTitle.trim() === '') return;
+    await fetch('/api/history/rename', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, newTitle: newTitle.trim() })
+    });
+    loadHistory();
+}
+
+// This function fetches video info when you paste a URL
 async function searchVideo() {
     let input = document.getElementById('urlInput').value.trim();
     const result = document.getElementById('result');
@@ -160,12 +102,11 @@ async function searchVideo() {
     result.style.display = 'block';
     document.getElementById('title').textContent = '⏳ Fetching video info...';
     document.getElementById('thumb').src = 'https://via.placeholder.com/340x190/111/eee?text=Loading...';
-    document.getElementById('duration').textContent = '— • —';
+    document.getElementById('duration').textContent = '- • -';
 
     const hasList = input.includes('&list=') || input.includes('?list=');
     const infoUrl = hasList ? input.split('&list=')[0].split('?list=')[0] : input;
 
-    // Grey out playlist checkbox
     const playlistCheck = document.getElementById('playlistMode');
     playlistCheck.disabled = !hasList;
     document.getElementById('playlistLabel').style.color = hasList ? '' : '#999';
@@ -192,20 +133,16 @@ async function searchVideo() {
     }
 }
 
-// Download function
+// This function handles the actual download (single video or playlist)
 async function download(type) {
-    if (!isLoggedIn) {
-        alert('Please login first to unlock downloads, history and album cover');
-        showAuthModal();
-        return;
-    }
-
     const originalUrl = document.getElementById('urlInput').value.trim();
     const title = document.getElementById('title').textContent;
     let quality = type === 'MP3' ? document.getElementById('mp3-quality').value : document.getElementById('video-quality').value;
 
-    const useCover = document.getElementById('useAsCover').checked;
+    let useCover = document.getElementById('useAsCover').checked;
     const isPlaylist = document.getElementById('playlistMode').checked;
+
+    if (type === 'Video') useCover = false;
 
     const progressContainer = document.getElementById('progressContainer');
     const progressBar = document.getElementById('progressBar');
@@ -214,6 +151,7 @@ async function download(type) {
     progressContainer.style.display = 'block';
     progressBar.style.width = '0%';
     progressBar.textContent = '0%';
+    progressText.textContent = `Downloading ${title}`;
 
     const btn = event.target;
     const originalText = btn.innerHTML;
@@ -232,11 +170,11 @@ async function download(type) {
 
             if (!videos || videos.length === 0) throw new Error('No videos found in playlist');
 
-            progressText.textContent = `Downloading playlist (0 of ${videos.length})`;
-
             for (let i = 0; i < videos.length; i++) {
                 const video = videos[i];
-                progressText.textContent = `Downloading video ${i + 1} of ${videos.length} – ${video.title}`;
+                const downloadId = `playlist-${i}-${Date.now()}`;
+
+                progressText.textContent = `Downloading ${i + 1} of ${videos.length} – ${video.title}`;
 
                 await fetch('/api/download', {
                     method: 'POST',
@@ -247,46 +185,57 @@ async function download(type) {
                         quality: quality,
                         title: video.title,
                         useCover: useCover,
-                        isPlaylist: false
+                        isPlaylist: false,
+                        downloadId: downloadId
                     })
                 });
 
-                const percent = Math.round(((i + 1) / videos.length) * 100);
-                progressBar.style.width = percent + '%';
-                progressBar.textContent = percent + '%';
+                await pollUntilDone(downloadId);
             }
-        } else {
+        } 
+        else {
+            const downloadId = 'dl-' + Date.now();
+
             await fetch('/api/download', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: originalUrl, type, quality, title, useCover, isPlaylist: false })
+                body: JSON.stringify({ url: originalUrl, type, quality, title, useCover, isPlaylist: false, downloadId })
             });
 
-            let progress = 0;
-            const interval = setInterval(() => {
-                progress += Math.random() * 25 + 5;
-                if (progress >= 100) progress = 100;
-                progressBar.style.width = progress + '%';
-                progressBar.textContent = Math.round(progress) + '%';
-                if (progress >= 100) {
-                    clearInterval(interval);
-                    finishDownload();
-                }
-            }, 120);
-            return;
+            await pollUntilDone(downloadId);
         }
 
         finishDownload();
 
     } catch (err) {
         progressText.textContent = '❌ Error';
+        setTimeout(() => { progressContainer.style.display = 'none'; btn.innerHTML = originalText; btn.disabled = false; }, 1500);
+    }
+
+    function pollUntilDone(id) {
+        return new Promise(resolve => {
+            const interval = setInterval(async () => {
+                try {
+                    const pRes = await fetch(`/api/progress/${id}`);
+                    const data = await pRes.json();
+
+                    progressBar.style.width = data.percent + '%';
+                    progressBar.textContent = data.percent + '%';
+
+                    if (data.percent >= 100) {
+                        clearInterval(interval);
+                        resolve();
+                    }
+                } catch (e) {}
+            }, 400);
+        });
     }
 
     function finishDownload() {
-        progressText.innerHTML = `✅ <strong>Done!</strong>`;
+        progressText.textContent = 'Download completed';
         setTimeout(() => {
             progressContainer.style.display = 'none';
-            alert(`✅ ${type} saved!\n\n${useCover && type === 'MP3' ? 'Thumbnail is now album art 🎵' : ''}`);
+            alert('Download completed successfully.');
             btn.innerHTML = originalText;
             btn.disabled = false;
             loadHistory();
@@ -296,14 +245,7 @@ async function download(type) {
 
 function fakeDownload(type) { download(type); }
 
-// Load history on page start
-window.addEventListener('load', loadHistory);
-
-// Attach the auth button (only once, at the end)
-document.getElementById('authBtn').onclick = function() {
-    if (isLoggedIn) {
-        logout();
-    } else {
-        showAuthModal();
-    }
-};
+// This runs when the page first loads
+window.addEventListener('load', () => {
+    loadHistory();
+});
