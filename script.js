@@ -5,7 +5,7 @@ function resetPage() {
     document.getElementById('progressContainer').style.display = 'none';
 }
 
-// Current logged in user (saved in localStorage)
+// Current logged in user
 let currentUser = null;
 
 // This function loads the download history from the server
@@ -19,14 +19,14 @@ async function loadHistory() {
     if (!currentUser) {
         title.textContent = 'Your Download History';
         empty.style.display = 'block';
-        empty.innerHTML = 'Login to see your personal history.';
+        empty.innerHTML = `Nothing downloaded yet.<br><a href="#" onclick="showAuthModal(); return false;" class="text-primary">Login to see your personal history.</a>`;
         return;
     }
 
     try {
-        let url = '/api/history';
+        let url = `/api/history?userId=${currentUser.id}`;
         if (currentUser.isAdmin) {
-            url = '/api/history/all';   // admin sees everything
+            url = '/api/history/all';
             title.textContent = 'All Users Download History';
         } else {
             title.textContent = 'Your Download History';
@@ -125,7 +125,7 @@ function showAuthModal() {
     }
     const modal = new bootstrap.Modal(document.getElementById('authModal'));
     modal.show();
-    switchTab(0); // default to login
+    switchTab(0);
 }
 
 // Switch between login and signup tabs
@@ -178,18 +178,20 @@ async function register() {
         if (data.error) throw new Error(data.error);
 
         alert('Account created! You can now login.');
-        switchTab(0); // switch back to login tab
+        switchTab(0);
     } catch (err) {
         alert(err.message);
     }
 }
 
-// Logout
+// Logout with confirmation
 function logout() {
-    currentUser = null;
-    localStorage.removeItem('currentUser');
-    document.getElementById('authBtn').innerHTML = 'Login / Sign up';
-    loadHistory();
+    if (confirm('Are you sure you want to log out?')) {
+        currentUser = null;
+        localStorage.removeItem('currentUser');
+        document.getElementById('authBtn').innerHTML = 'Login / Sign up';
+        loadHistory();
+    }
 }
 
 // Search video
@@ -211,7 +213,8 @@ async function searchVideo() {
     playlistCheck.disabled = !hasList;
     document.getElementById('playlistLabel').style.color = hasList ? '' : '#999';
 
-    if (hasList) playlistCheck.checked = true;
+    // Playlist checkbox stays unticked by default (even when enabled)
+    playlistCheck.checked = false;
 
     try {
         const res = await fetch('/api/info', {
@@ -346,6 +349,26 @@ async function download(type) {
 
 function fakeDownload(type) { download(type); }
 
+// Lock checkboxes behind login
+function lockCheckboxes() {
+    const cover = document.getElementById('useAsCover');
+    const playlist = document.getElementById('playlistMode');
+
+    cover.addEventListener('change', function() {
+        if (!currentUser) {
+            alert('Login to use the album cover feature.');
+            this.checked = false;
+        }
+    });
+
+    playlist.addEventListener('change', function() {
+        if (!currentUser) {
+            alert('Login to use the playlist feature.');
+            this.checked = false;
+        }
+    });
+}
+
 // Load on start
 window.addEventListener('load', () => {
     const saved = localStorage.getItem('currentUser');
@@ -354,4 +377,5 @@ window.addEventListener('load', () => {
         document.getElementById('authBtn').innerHTML = `👤 ${currentUser.email} <small>(Logout)</small>`;
     }
     loadHistory();
+    lockCheckboxes();
 });

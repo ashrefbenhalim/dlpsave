@@ -1,6 +1,6 @@
 const express = require('express');
 const { spawn } = require('child_process');
-const fs = require('fs');                    // ← this was missing
+const fs = require('fs');
 const sqlite3 = require('better-sqlite3');
 const bcrypt = require('bcryptjs');
 
@@ -41,23 +41,18 @@ db.exec(`
     );
 `);
 
-// Seed example accounts if database is empty
-const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
-if (userCount === 0) {
-    const salt = bcrypt.genSaltSync(10);
-    // Admin
-    db.prepare('INSERT INTO users (email, password_hash, is_admin) VALUES (?, ?, 1)').run('admin@dlwip.com', bcrypt.hashSync('admin', salt));
-    // Normal test user
-    db.prepare('INSERT INTO users (email, password_hash, is_admin) VALUES (?, ?, 0)').run('test@example.com', bcrypt.hashSync('123', salt));
+// Always make sure the two test accounts exist with correct passwords
+const salt = bcrypt.genSaltSync(10);
+db.prepare('INSERT OR REPLACE INTO users (id, email, password_hash, is_admin) VALUES (1, ?, ?, 0)').run('test@example.com', bcrypt.hashSync('123', salt));
+db.prepare('INSERT OR REPLACE INTO users (id, email, password_hash, is_admin) VALUES (2, ?, ?, 1)').run('admin@dlwip.com', bcrypt.hashSync('admin', salt));
 
-    const testUserId = db.prepare('SELECT id FROM users WHERE email = ?').get('test@example.com').id;
-
-    // Add a few example downloads for the test user
-    const stmt = db.prepare('INSERT INTO history (user_id, url, title, type, quality, useCover, time, file) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-    stmt.run(testUserId, 'https://www.youtube.com/watch?v=dQw4w9wgxcQ', 'Never Gonna Give You Up', 'MP3', 'MP3 320kbps (high quality)', 1, '12/04/26 09:00', 'Never Gonna Give You Up.mp3');
-    stmt.run(testUserId, 'https://www.youtube.com/watch?v=3JZ4pnN7gmM', 'Sample Video', 'Video', '720', 0, '12/04/26 09:05', 'Sample Video.mp4');
-    stmt.run(testUserId, 'https://soundcloud.com/example/track', 'Example Song', 'MP3', 'MP3 256kbps', 1, '12/04/26 09:10', 'Example Song.mp3');
-}
+// Make sure the test user always has 3 popular, reliable internet culture examples
+const testUserId = 1;
+db.prepare('DELETE FROM history WHERE user_id = ?').run(testUserId);
+const stmt = db.prepare('INSERT INTO history (user_id, url, title, type, quality, useCover, time, file) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+stmt.run(testUserId, 'https://www.youtube.com/watch?v=L_jWHffIx5E', 'All Star', 'MP3', 'MP3 320kbps (high quality)', 1, '12/04/26 09:00', 'All Star.mp3');
+stmt.run(testUserId, 'https://www.youtube.com/watch?v=9bZkp7q19f0', 'Gangnam Style', 'Video', '720', 0, '12/04/26 09:05', 'Gangnam Style.mp4');
+stmt.run(testUserId, 'https://www.youtube.com/watch?v=kJQP7kiw5Fk', 'Despacito', 'MP3', 'MP3 256kbps', 1, '12/04/26 09:10', 'Despacito.mp3');
 
 const downloadProgress = new Map();
 
