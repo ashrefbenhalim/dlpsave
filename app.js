@@ -1,5 +1,6 @@
 const express = require('express');
 const { spawn } = require('child_process');
+const fs = require('fs');                    // ← this was missing
 const sqlite3 = require('better-sqlite3');
 const bcrypt = require('bcryptjs');
 
@@ -243,4 +244,6 @@ app.post('/api/playlist-videos', (req, res) => {
 app.listen(PORT, () => {
     console.log(`✅ dlwip running at http://localhost:${PORT}`);
     console.log(`   SQLite database ready - test accounts created`);
+    console.log(`   Normal user: test@example.com / 123`);
+    console.log(`   Admin: admin@dlwip.com / admin`);
 });
