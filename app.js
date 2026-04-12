@@ -1,58 +1,73 @@
 const express = require('express');
 const { spawn } = require('child_process');
-const fs = require('fs');
-const Database = require('better-sqlite3');
+const sqlite3 = require('better-sqlite3');
+const bcrypt = require('bcryptjs');
 
 const app = express();
 const PORT = 5000;
 const DOWNLOAD_FOLDER = 'downloads';
+const DB_FILE = 'history.db';
 
 app.use(express.static('.'));
 app.use(express.json());
 
 if (!fs.existsSync(DOWNLOAD_FOLDER)) fs.mkdirSync(DOWNLOAD_FOLDER);
 
-// Open SQLite database (creates the file automatically)
-const db = new Database('history.db');
+const db = sqlite3(DB_FILE);
 
-// Create tables if they don't exist yet
+// Create tables
 db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY,
-    username TEXT UNIQUE,
-    password_hash TEXT,
-    is_admin INTEGER DEFAULT 0
-  );
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY,
+        email TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        is_admin INTEGER DEFAULT 0
+    );
 `);
 
 db.exec(`
-  CREATE TABLE IF NOT EXISTS history (
-    id INTEGER PRIMARY KEY,
-    user_id INTEGER,
-    url TEXT,
-    title TEXT,
-    type TEXT,
-    quality TEXT,
-    useCover INTEGER,
-    time TEXT,
-    file TEXT,
-    FOREIGN KEY(user_id) REFERENCES users(id)
-  );
+    CREATE TABLE IF NOT EXISTS history (
+        id INTEGER PRIMARY KEY,
+        user_id INTEGER,
+        url TEXT,
+        title TEXT,
+        type TEXT,
+        quality TEXT,
+        useCover INTEGER,
+        time TEXT,
+        file TEXT,
+        FOREIGN KEY(user_id) REFERENCES users(id)
+    );
 `);
 
-// For now we use a single demo user (id = 1) so everything works exactly like before
-const DEMO_USER_ID = 1;
+// Seed example accounts if database is empty
+const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get().count;
+if (userCount === 0) {
+    const salt = bcrypt.genSaltSync(10);
+    // Admin
+    db.prepare('INSERT INTO users (email, password_hash, is_admin) VALUES (?, ?, 1)').run('admin@dlwip.com', bcrypt.hashSync('admin', salt));
+    // Normal test user
+    db.prepare('INSERT INTO users (email, password_hash, is_admin) VALUES (?, ?, 0)').run('test@example.com', bcrypt.hashSync('123', salt));
+
+    const testUserId = db.prepare('SELECT id FROM users WHERE email = ?').get('test@example.com').id;
+
+    // Add a few example downloads for the test user
+    const stmt = db.prepare('INSERT INTO history (user_id, url, title, type, quality, useCover, time, file) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+    stmt.run(testUserId, 'https://www.youtube.com/watch?v=dQw4w9wgxcQ', 'Never Gonna Give You Up', 'MP3', 'MP3 320kbps (high quality)', 1, '12/04/26 09:00', 'Never Gonna Give You Up.mp3');
+    stmt.run(testUserId, 'https://www.youtube.com/watch?v=3JZ4pnN7gmM', 'Sample Video', 'Video', '720', 0, '12/04/26 09:05', 'Sample Video.mp4');
+    stmt.run(testUserId, 'https://soundcloud.com/example/track', 'Example Song', 'MP3', 'MP3 256kbps', 1, '12/04/26 09:10', 'Example Song.mp3');
+}
 
 const downloadProgress = new Map();
 
-// This function returns the current progress for a download
+// Progress
 app.get('/api/progress/:id', (req, res) => {
     const id = req.params.id;
     const prog = downloadProgress.get(id) || { percent: 0 };
     res.json({ percent: prog.percent });
 });
 
-// This function gets basic info about a video from yt-dlp
+// Info
 app.post('/api/info', (req, res) => {
     const url = req.body.url.trim();
     const yt = spawn('yt-dlp', ['--dump-json', url], { shell: false });
@@ -73,9 +88,41 @@ app.post('/api/info', (req, res) => {
     });
 });
 
-// This function starts the actual download with yt-dlp
+// Register
+app.post('/api/register', (req, res) => {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+
+    try {
+        const salt = bcrypt.genSaltSync(10);
+        const hash = bcrypt.hashSync(password, salt);
+        const stmt = db.prepare('INSERT INTO users (email, password_hash) VALUES (?, ?)');
+        stmt.run(email, hash);
+        res.json({ success: true });
+    } catch (e) {
+        res.status(400).json({ error: 'Email already exists' });
+    }
+});
+
+// Login
+app.post('/api/login', (req, res) => {
+    const { email, password } = req.body;
+    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+
+    if (!user || !bcrypt.compareSync(password, user.password_hash)) {
+        return res.status(401).json({ error: 'Wrong email or password' });
+    }
+
+    res.json({
+        id: user.id,
+        email: user.email,
+        isAdmin: user.is_admin === 1
+    });
+});
+
+// Download
 app.post('/api/download', (req, res) => {
-    const { url, type, quality, title = 'Unknown', useCover = false, isPlaylist = false, downloadId } = req.body;
+    const { url, type, quality, title = 'Unknown', useCover = false, isPlaylist = false, downloadId, userId } = req.body;
     const id = downloadId || `dl-${Date.now()}`;
 
     downloadProgress.set(id, { percent: 0 });
@@ -124,61 +171,56 @@ app.post('/api/download', (req, res) => {
         const prog = downloadProgress.get(id);
         if (prog) prog.percent = (code === 0) ? 100 : 0;
 
-        if (code === 0) {
-            // Save to real SQLite database
-            const stmt = db.prepare(`
-                INSERT INTO history (user_id, url, title, type, quality, useCover, time, file)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            `);
-            stmt.run(
-                DEMO_USER_ID,
-                url,
-                title,
-                type,
-                quality,
-                useCover ? 1 : 0,
-                new Date().toLocaleString('fr-TN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }),
-                `${title}.${type === 'MP3' ? 'mp3' : 'mp4'}`
-            );
+        if (code === 0 && userId) {
+            const time = new Date().toLocaleString('fr-TN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
+            const file = `${title}.${type === 'MP3' ? 'mp3' : 'mp4'}`;
+            db.prepare('INSERT INTO history (user_id, url, title, type, quality, useCover, time, file) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+              .run(userId, url, title, type, quality, useCover ? 1 : 0, time, file);
         }
     });
 });
 
-// This function returns the history for the current user (demo user for now)
+// History for normal user
 app.get('/api/history', (req, res) => {
-    const stmt = db.prepare('SELECT * FROM history WHERE user_id = ? ORDER BY id DESC LIMIT 10');
-    const history = stmt.all(DEMO_USER_ID);
-    res.json(history);
+    const userId = req.query.userId;
+    if (!userId) return res.json([]);
+
+    const rows = db.prepare('SELECT * FROM history WHERE user_id = ? ORDER BY id DESC').all(userId);
+    res.json(rows);
 });
 
-// This function clears the entire history (for the demo user)
+// History for admin (all users)
+app.get('/api/history/all', (req, res) => {
+    const rows = db.prepare(`
+        SELECT h.*, u.email 
+        FROM history h 
+        JOIN users u ON h.user_id = u.id 
+        ORDER BY h.id DESC
+    `).all();
+    res.json(rows);
+});
+
+// Clear history
 app.post('/api/history/clear', (req, res) => {
-    const stmt = db.prepare('DELETE FROM history WHERE user_id = ?');
-    stmt.run(DEMO_USER_ID);
+    db.prepare('DELETE FROM history').run();
     res.json({ success: true });
 });
 
-// This function deletes one item
+// Delete one item
 app.post('/api/history/delete', (req, res) => {
     const { id } = req.body;
-    if (!id) return res.status(400).json({ error: 'missing id' });
-
-    const stmt = db.prepare('DELETE FROM history WHERE id = ? AND user_id = ?');
-    stmt.run(id, DEMO_USER_ID);
+    db.prepare('DELETE FROM history WHERE id = ?').run(id);
     res.json({ success: true });
 });
 
-// This function renames one history item (keeps the feature you wanted for grading)
+// Rename
 app.post('/api/history/rename', (req, res) => {
     const { id, newTitle } = req.body;
-    if (!id || !newTitle) return res.status(400).json({ error: 'missing data' });
-
-    const stmt = db.prepare('UPDATE history SET title = ? WHERE id = ? AND user_id = ?');
-    stmt.run(newTitle.trim(), id, DEMO_USER_ID);
+    db.prepare('UPDATE history SET title = ? WHERE id = ?').run(newTitle, id);
     res.json({ success: true });
 });
 
-// This function gets the list of videos inside a playlist
+// Playlist videos
 app.post('/api/playlist-videos', (req, res) => {
     const url = req.body.url;
     const yt = spawn('yt-dlp', ['--flat-playlist', '--dump-json', url], { shell: false });
@@ -200,6 +242,5 @@ app.post('/api/playlist-videos', (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`✅ dlwip running at http://localhost:${PORT}`);
-    console.log(`   Using real SQLite database (history.db)`);
-    console.log(`   Everything still works exactly like before - login disabled for debug`);
+    console.log(`   SQLite database ready - test accounts created`);
 });

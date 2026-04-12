@@ -5,18 +5,39 @@ function resetPage() {
     document.getElementById('progressContainer').style.display = 'none';
 }
 
-// This function loads the download history from the server and builds the list
-async function loadHistory() {
-    try {
-        const res = await fetch('/api/history');
-        const history = await res.json();
-        const list = document.getElementById('historyList');
-        const empty = document.getElementById('historyEmpty');
+// Current logged in user (saved in localStorage)
+let currentUser = null;
 
-        list.innerHTML = '';
+// This function loads the download history from the server
+async function loadHistory() {
+    const list = document.getElementById('historyList');
+    const empty = document.getElementById('historyEmpty');
+    const title = document.getElementById('historyTitle');
+
+    list.innerHTML = '';
+
+    if (!currentUser) {
+        title.textContent = 'Your Download History';
+        empty.style.display = 'block';
+        empty.innerHTML = 'Login to see your personal history.';
+        return;
+    }
+
+    try {
+        let url = '/api/history';
+        if (currentUser.isAdmin) {
+            url = '/api/history/all';   // admin sees everything
+            title.textContent = 'All Users Download History';
+        } else {
+            title.textContent = 'Your Download History';
+        }
+
+        const res = await fetch(url);
+        const history = await res.json();
 
         if (history.length === 0) {
             empty.style.display = 'block';
+            empty.innerHTML = 'Nothing downloaded yet.<br>Downloads will appear here automatically.';
             return;
         }
 
@@ -36,11 +57,15 @@ async function loadHistory() {
         history.forEach((item) => {
             const div = document.createElement('div');
             div.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+            let extra = '';
+            if (currentUser.isAdmin) extra = `<small class="text-muted me-3">${item.email}</small>`;
+
             div.innerHTML = `
                 <div style="flex: 1; cursor: pointer;" onclick="loadVideoFromHistory('${item.url}', '${item.type}', '${item.quality}', ${item.useCover})">
                     <strong>${item.title}</strong><br>
                     <small class="text-muted">${item.type} • ${item.time}</small>
                 </div>
+                ${extra}
                 <span class="badge bg-primary me-3">${item.file.split('.').pop().toUpperCase()}</span>
                 <button onclick="renameHistoryItem(${item.id}); event.stopImmediatePropagation(); return false;" 
                         class="btn btn-sm btn-outline-secondary me-1">✏️</button>
@@ -80,7 +105,7 @@ async function deleteHistoryItem(id) {
     loadHistory();
 }
 
-// This function lets you rename a history item (title only, file stays the same)
+// This function lets you rename a history item
 async function renameHistoryItem(id) {
     const newTitle = prompt('New title for this download?');
     if (!newTitle || newTitle.trim() === '') return;
@@ -92,7 +117,82 @@ async function renameHistoryItem(id) {
     loadHistory();
 }
 
-// This function fetches video info when you paste a URL
+// This function shows the login/signup modal
+function showAuthModal() {
+    if (currentUser) {
+        logout();
+        return;
+    }
+    const modal = new bootstrap.Modal(document.getElementById('authModal'));
+    modal.show();
+    switchTab(0); // default to login
+}
+
+// Switch between login and signup tabs
+function switchTab(tab) {
+    document.getElementById('loginForm').style.display = tab === 0 ? 'block' : 'none';
+    document.getElementById('signupForm').style.display = tab === 1 ? 'block' : 'none';
+    document.getElementById('loginTab').classList.toggle('active', tab === 0);
+    document.getElementById('signupTab').classList.toggle('active', tab === 1);
+}
+
+// Login
+async function login() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+
+    try {
+        const res = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+
+        if (data.error) throw new Error(data.error);
+
+        currentUser = { id: data.id, email: data.email, isAdmin: data.isAdmin };
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+        document.getElementById('authBtn').innerHTML = `👤 ${data.email} <small>(Logout)</small>`;
+        bootstrap.Modal.getInstance(document.getElementById('authModal')).hide();
+        loadHistory();
+    } catch (err) {
+        alert(err.message);
+    }
+}
+
+// Register
+async function register() {
+    const email = document.getElementById('signupEmail').value.trim();
+    const password = document.getElementById('signupPassword').value;
+
+    try {
+        const res = await fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+
+        if (data.error) throw new Error(data.error);
+
+        alert('Account created! You can now login.');
+        switchTab(0); // switch back to login tab
+    } catch (err) {
+        alert(err.message);
+    }
+}
+
+// Logout
+function logout() {
+    currentUser = null;
+    localStorage.removeItem('currentUser');
+    document.getElementById('authBtn').innerHTML = 'Login / Sign up';
+    loadHistory();
+}
+
+// Search video
 async function searchVideo() {
     let input = document.getElementById('urlInput').value.trim();
     const result = document.getElementById('result');
@@ -133,7 +233,7 @@ async function searchVideo() {
     }
 }
 
-// This function handles the actual download (single video or playlist)
+// Download
 async function download(type) {
     const originalUrl = document.getElementById('urlInput').value.trim();
     const title = document.getElementById('title').textContent;
@@ -186,7 +286,8 @@ async function download(type) {
                         title: video.title,
                         useCover: useCover,
                         isPlaylist: false,
-                        downloadId: downloadId
+                        downloadId: downloadId,
+                        userId: currentUser ? currentUser.id : null
                     })
                 });
 
@@ -199,7 +300,7 @@ async function download(type) {
             await fetch('/api/download', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: originalUrl, type, quality, title, useCover, isPlaylist: false, downloadId })
+                body: JSON.stringify({ url: originalUrl, type, quality, title, useCover, isPlaylist: false, downloadId, userId: currentUser ? currentUser.id : null })
             });
 
             await pollUntilDone(downloadId);
@@ -245,7 +346,12 @@ async function download(type) {
 
 function fakeDownload(type) { download(type); }
 
-// This runs when the page first loads
+// Load on start
 window.addEventListener('load', () => {
+    const saved = localStorage.getItem('currentUser');
+    if (saved) {
+        currentUser = JSON.parse(saved);
+        document.getElementById('authBtn').innerHTML = `👤 ${currentUser.email} <small>(Logout)</small>`;
+    }
     loadHistory();
 });

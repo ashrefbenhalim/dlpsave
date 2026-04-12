@@ -20,10 +20,50 @@
                 <a href="#history" class="text-white me-4 text-decoration-none">History</a>
                 <a href="#faq" class="text-white me-4 text-decoration-none">FAQ</a>
                 <a href="#about" class="text-white me-4 text-decoration-none">About</a>
-                <button class="btn btn-outline-light btn-sm" id="authBtn">Login / Sign up (disabled for debug)</button>
+                <button class="btn btn-outline-light btn-sm" id="authBtn" onclick="showAuthModal()">Login / Sign up</button>
             </nav>
         </div>
     </header>
+
+    <!-- AUTH MODAL -->
+    <div class="modal fade" id="authModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">Login / Sign up</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <ul class="nav nav-tabs mb-3" id="authTabs">
+                        <li class="nav-item"><a class="nav-link active" id="loginTab" onclick="switchTab(0)">Login</a></li>
+                        <li class="nav-item"><a class="nav-link" id="signupTab" onclick="switchTab(1)">Sign up</a></li>
+                    </ul>
+
+                    <!-- Login form -->
+                    <div id="loginForm">
+                        <div class="mb-3">
+                            <input type="email" id="loginEmail" class="form-control" placeholder="Email" value="test@example.com">
+                        </div>
+                        <div class="mb-3">
+                            <input type="password" id="loginPassword" class="form-control" placeholder="Password" value="123">
+                        </div>
+                        <button class="btn btn-primary w-100" onclick="login()">Login</button>
+                    </div>
+
+                    <!-- Signup form -->
+                    <div id="signupForm" style="display:none;">
+                        <div class="mb-3">
+                            <input type="email" id="signupEmail" class="form-control" placeholder="Email">
+                        </div>
+                        <div class="mb-3">
+                            <input type="password" id="signupPassword" class="form-control" placeholder="Password">
+                        </div>
+                        <button class="btn btn-primary w-100" onclick="register()">Create account</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <section id="home" class="hero bg-dark text-white text-center py-5">
         <div class="container">
@@ -114,7 +154,7 @@
 
     <section id="history" class="py-5 bg-light">
         <div class="container">
-            <h2 class="mb-4 text-center">Your Download History</h2>
+            <h2 class="mb-4 text-center" id="historyTitle">Your Download History</h2>
             <div id="historyList" class="list-group"></div>
             <p id="historyEmpty" class="text-muted fst-italic text-center lead mt-4" style="display: none;">
                 Nothing downloaded yet.<br>Downloads will appear here automatically.
