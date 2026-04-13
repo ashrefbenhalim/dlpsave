@@ -1,7 +1,6 @@
 # dlpsave - Local Video & Audio Downloader
 
-A simple, private, 100% local video and audio downloader built as an end-of-year project.  
-No cloud, no tracking, no limits.
+A simple, private, 100% local video and audio downloader. No cloud, no tracking, no limits.
 
 ## Setup Instructions
 
@@ -49,7 +48,7 @@ http://localhost:5000
 ---
 
 **Features**
-- Download from YouTube, TikTok, Instagram, SoundCloud and 1000+ sites
+- Download YouTube videos and audio.
 - Audio (MP3) or Video (MP4) with quality selection
 - Playlist support (requires login)
 - Album cover embedding for MP3 files (requires login)
@@ -63,5 +62,6 @@ http://localhost:5000
 - Backend: Node.js + Express
 - Database: SQLite
 - Downloader: yt-dlp + ffmpeg
+
 
 Made as an end-of-year project - completely local and private.
