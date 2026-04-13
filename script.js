@@ -60,10 +60,13 @@ async function loadHistory() {
             let extra = '';
             if (currentUser.isAdmin) extra = `<small class="text-muted me-3">${item.email}</small>`;
 
+            // Show "Audio" or "Video" in the small text, but keep the badge as MP3 / MP4
+            const displayType = item.type === 'MP3' ? 'Audio' : 'Video';
+
             div.innerHTML = `
                 <div style="flex: 1; cursor: pointer;" onclick="loadVideoFromHistory('${item.url}', '${item.type}', '${item.quality}', ${item.useCover})">
                     <strong>${item.title}</strong><br>
-                    <small class="text-muted">${item.type} • ${item.time}</small>
+                    <small class="text-muted">${displayType} • ${item.time}</small>
                 </div>
                 ${extra}
                 <span class="badge bg-primary me-3">${item.file.split('.').pop().toUpperCase()}</span>
@@ -213,7 +216,6 @@ async function searchVideo() {
     playlistCheck.disabled = !hasList;
     document.getElementById('playlistLabel').style.color = hasList ? '' : '#999';
 
-    // Playlist checkbox stays unticked by default (even when enabled)
     playlistCheck.checked = false;
 
     try {

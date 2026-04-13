@@ -41,18 +41,20 @@ db.exec(`
     );
 `);
 
-// Always make sure the two test accounts exist with correct passwords
+// Always make sure the two test accounts exist
 const salt = bcrypt.genSaltSync(10);
 db.prepare('INSERT OR REPLACE INTO users (id, email, password_hash, is_admin) VALUES (1, ?, ?, 0)').run('test@example.com', bcrypt.hashSync('123', salt));
 db.prepare('INSERT OR REPLACE INTO users (id, email, password_hash, is_admin) VALUES (2, ?, ?, 1)').run('admin@dlwip.com', bcrypt.hashSync('admin', salt));
 
-// Make sure the test user always has 3 popular, reliable internet culture examples
+// Seed the 3 popular examples ONLY if the test user has no history yet
 const testUserId = 1;
-db.prepare('DELETE FROM history WHERE user_id = ?').run(testUserId);
-const stmt = db.prepare('INSERT INTO history (user_id, url, title, type, quality, useCover, time, file) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
-stmt.run(testUserId, 'https://www.youtube.com/watch?v=L_jWHffIx5E', 'All Star', 'MP3', 'MP3 320kbps (high quality)', 1, '12/04/26 09:00', 'All Star.mp3');
-stmt.run(testUserId, 'https://www.youtube.com/watch?v=9bZkp7q19f0', 'Gangnam Style', 'Video', '720', 0, '12/04/26 09:05', 'Gangnam Style.mp4');
-stmt.run(testUserId, 'https://www.youtube.com/watch?v=kJQP7kiw5Fk', 'Despacito', 'MP3', 'MP3 256kbps', 1, '12/04/26 09:10', 'Despacito.mp3');
+const historyCount = db.prepare('SELECT COUNT(*) as count FROM history WHERE user_id = ?').get(testUserId).count;
+if (historyCount === 0) {
+    const stmt = db.prepare('INSERT INTO history (user_id, url, title, type, quality, useCover, time, file) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+    stmt.run(testUserId, 'https://www.youtube.com/watch?v=L_jWHffIx5E', 'All Star', 'MP3', 'MP3 320kbps (high quality)', 1, '12/04/26 09:00', 'All Star.mp3');
+    stmt.run(testUserId, 'https://www.youtube.com/watch?v=9bZkp7q19f0', 'Gangnam Style', 'Video', '720', 0, '12/04/26 09:05', 'Gangnam Style.mp4');
+    stmt.run(testUserId, 'https://www.youtube.com/watch?v=kJQP7kiw5Fk', 'Despacito', 'MP3', 'MP3 256kbps', 1, '12/04/26 09:10', 'Despacito.mp3');
+}
 
 const downloadProgress = new Map();
 
@@ -237,7 +239,7 @@ app.post('/api/playlist-videos', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`✅ dlwip running at http://localhost:${PORT}`);
+    console.log(`✅ dlpsave running at http://localhost:${PORT}`);
     console.log(`   SQLite database ready - test accounts created`);
     console.log(`   Normal user: test@example.com / 123`);
     console.log(`   Admin: admin@dlwip.com / admin`);

@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="css/style.css">
-    <title>dlwip - Video & Audio Downloader</title>
+    <title>dlpsave - Video & Audio Downloader</title>
 </head>
 <body>
 
     <header class="bg-primary text-white py-3 shadow-sm fixed-top">
         <div class="container d-flex justify-content-between align-items-center">
             <div class="logo fs-3 fw-bold">
-                <a href="#" onclick="resetPage(); return false;" class="text-white text-decoration-none">dlwip</a>
+                <a href="#" onclick="resetPage(); return false;" class="text-white text-decoration-none">dlpsave</a>
             </div>
             
             <nav class="top-nav d-flex align-items-center">
@@ -39,7 +39,6 @@
                         <li class="nav-item"><a class="nav-link" id="signupTab" onclick="switchTab(1)">Sign up</a></li>
                     </ul>
 
-                    <!-- Login form -->
                     <div id="loginForm">
                         <div class="mb-3">
                             <input type="email" id="loginEmail" class="form-control" placeholder="Email" value="test@example.com">
@@ -50,7 +49,6 @@
                         <button class="btn btn-primary w-100" onclick="login()">Login</button>
                     </div>
 
-                    <!-- Signup form -->
                     <div id="signupForm" style="display:none;">
                         <div class="mb-3">
                             <input type="email" id="signupEmail" class="form-control" placeholder="Email">
@@ -97,7 +95,7 @@
                     <div class="row g-4">
                         <div class="col-md-6">
                             <button class="btn btn-success btn-lg w-100 mb-3 fw-bold py-3" onclick="fakeDownload('MP3')">
-                                ⬇️ Download MP3
+                                ⬇️ Download Audio
                             </button>
                             <select id="mp3-quality" class="form-select form-select-lg">
                                 <option>MP3 320kbps (high quality)</option>
@@ -113,11 +111,11 @@
                             </button>
                             <select id="video-quality" class="form-select form-select-lg">
                                 <option value="best">Best video (highest available)</option>
-                                <option value="1080">1080p</option>
-                                <option value="720" selected>720p HD (recommended)</option>
-                                <option value="480">480p</option>
-                                <option value="360">360p</option>
-                                <option value="240">240p (small file)</option>
+                                <option value="1080">MP4 1080p</option>
+                                <option value="720" selected>MP4 720p HD (recommended)</option>
+                                <option value="480">MP4 480p</option>
+                                <option value="360">MP4 360p</option>
+                                <option value="240">MP4 240p (small file)</option>
                             </select>
                         </div>
                     </div>
@@ -174,7 +172,7 @@
                     </h2>
                     <div id="faq1" class="accordion-collapse collapse">
                         <div class="accordion-body">
-                            Paste the video or song URL (or even a playlist), pick your format and quality, and hit download. Everything runs right on your computer - no uploads, no servers, no one else sees what you're downloading.
+                            Paste any URL, pick audio or video, and hit download. Everything runs locally on your computer — no uploads, no servers.
                         </div>
                     </div>
                 </div>
@@ -186,7 +184,7 @@
                     </h2>
                     <div id="faq2" class="accordion-collapse collapse">
                         <div class="accordion-body">
-                            YouTube (including Shorts), TikTok, Instagram Reels, Facebook videos, Vimeo, Twitter/X videos, SoundCloud, and over 1000 more sites - all thanks to yt-dlp.
+                            YouTube, TikTok, Instagram, Facebook, Vimeo, SoundCloud and over 1000 more sites.
                         </div>
                     </div>
                 </div>
@@ -198,31 +196,43 @@
                     </h2>
                     <div id="faq3" class="accordion-collapse collapse">
                         <div class="accordion-body">
-                            Completely free. No ads, no registration needed, and nothing ever leaves your computer. 100% offline after you open the site.
+                            Completely free and 100% private. No ads, no tracking. Everything stays on your own computer.
                         </div>
                     </div>
                 </div>
                 <div class="accordion-item">
                     <h2 class="accordion-header">
                         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
-                            Can I download playlists or entire channels?
+                            Can I download playlists?
                         </button>
                     </h2>
                     <div id="faq4" class="accordion-collapse collapse">
                         <div class="accordion-body">
-                            Yes - just paste the playlist or channel URL. The playlist checkbox will handle the rest.
+                            Yes — but you must be logged in. The playlist checkbox only works after you login.
                         </div>
                     </div>
                 </div>
                 <div class="accordion-item">
                     <h2 class="accordion-header">
                         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5">
-                            Will this work on my phone or tablet?
+                            What features require login?
                         </button>
                     </h2>
                     <div id="faq5" class="accordion-collapse collapse">
                         <div class="accordion-body">
-                            The site is already mobile-friendly. Later we can turn it into a Progressive Web App so you can add it to your home screen like a real app.
+                            Album cover for MP3 files and playlist downloads require you to be logged in. Your download history is also personal to your account.
+                        </div>
+                    </div>
+                </div>
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq6">
+                            Will this work on my phone?
+                        </button>
+                    </h2>
+                    <div id="faq6" class="accordion-collapse collapse">
+                        <div class="accordion-body">
+                            Yes, the site is mobile-friendly. Later we can turn it into a real app you can add to your home screen.
                         </div>
                     </div>
                 </div>
@@ -239,7 +249,7 @@
     </section>
 
     <footer class="bg-dark text-white text-center py-4">
-        <p class="mb-0">dlwip • Private local downloader • End-of-year project</p>
+        <p class="mb-0">dlpsave • Private local downloader • End-of-year project</p>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
