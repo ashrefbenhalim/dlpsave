@@ -63,5 +63,6 @@ http://localhost:5000
 - Database: SQLite
 - Downloader: yt-dlp + ffmpeg
 
+---
 
 Made as an end-of-year project - completely local and private.
