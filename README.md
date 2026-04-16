@@ -17,7 +17,7 @@ winget install yt-dlp
 winget install ffmpeg
 ```
 
-### 3. Clone and Run the Project (First Time)
+### 3. Clone and Install the Project
 
 1. Create an empty folder.  
 2. Open the folder → click the path bar → type `cmd` and press Enter.  
@@ -27,10 +27,9 @@ winget install ffmpeg
 git clone https://github.com/ashrefbenhalim/dlpsave.git
 cd dlpsave
 npm install
-node app
 ```
 
-### 4. Launch the App (Every Time)
+### 4. Launch the App
 
 1. Open the `dlpsave` folder.  
 2. Click the path bar → type `cmd` and press Enter.  
