@@ -17,20 +17,30 @@ winget install yt-dlp
 winget install ffmpeg
 ```
 
-### 3. Clone and Run the Project
+### 3. Clone and Run the Project (First Time)
 
-Open **Command Prompt** and run:
+1. Create an empty folder.  
+2. Open the folder → click the path bar → type `cmd` and press Enter.  
+3. Run:
 
 ```cmd
 git clone https://github.com/ashrefbenhalim/dlpsave.git
 cd dlpsave
 npm install
-node app.js
+node app
 ```
 
-### 4. Open the App
+### 4. Launch the App (Every Time)
 
-Go to your browser and visit:
+1. Open the `dlpsave` folder.  
+2. Click the path bar → type `cmd` and press Enter.  
+3. Run:
+
+```cmd
+node app
+```
+
+Then open your browser and go to:
 
 ```
 http://localhost:5000
